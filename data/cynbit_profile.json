@@ -1,0 +1,63 @@
+{
+  "company_name": "Cynbit Technologies Pvt. Ltd.",
+  "tagline": "The Optimistic Architect — Architecting the Future with AI Automation & Software Solutions",
+  "location": "32/115 Pratap Nagar, Jaipur, Rajasthan, 302033, India",
+  "website": "https://www.cynbit.in",
+  "core_pillars": [
+    {
+      "name": "Services Hub",
+      "services": [
+        "Autonomous AI Agents & Multi-Agent Workflows",
+        "Cognitive LLM Automation & Document Processing",
+        "AI Voice Agents & Conversational AI",
+        "Full-Stack Web & Mobile Development (Next.js, React, Flutter)",
+        "Resilient Backend Systems (FastAPI, Go, Rust, Node.js)",
+        "Zero-Trust Cloud Infrastructure (AWS, Azure)",
+        "Technical SEO Engineering & CRM Automation"
+      ]
+    },
+    {
+      "name": "Proprietary SaaS Suite",
+      "products": [
+        {
+          "name": "Cynbit Studio",
+          "category": "Career Intelligence & Adaptive Code Lab",
+          "description": "AI-powered skill engine with adaptive coding missions, automated code evaluation, and career matching."
+        },
+        {
+          "name": "TenantEase",
+          "category": "Property & Tenant Management SaaS",
+          "description": "Smart property platform replacing manual operations with automated rent tracking and AI vetting."
+        },
+        {
+          "name": "Revio",
+          "category": "AI Reputation & Sentiment Hub",
+          "description": "AI-first multi-location reputation management platform automating customer feedback and branch performance."
+        }
+      ]
+    },
+    {
+      "name": "Social Impact & EdTech",
+      "initiatives": [
+        {
+          "name": "BitElevate",
+          "description": "Global software engineering training program with 1000+ certified architects and mentorship."
+        },
+        {
+          "name": "Manav Seva Trust Partnership",
+          "description": "IT and computer education outreach across rural areas and government schools in India."
+        }
+      ]
+    }
+  ],
+  "technology_catalog": {
+    "frontend": ["Next.js (App Router)", "React.js", "TypeScript", "TailwindCSS", "Flutter"],
+    "backend": ["Python (FastAPI)", "Go (Golang)", "Rust", "Node.js (NestJS / Express)"],
+    "ai_ml": ["LangChain", "LlamaIndex", "Hugging Face", "vLLM", "OpenAI API", "Anthropic Claude", "Google Gemini"],
+    "vector_databases": ["Qdrant", "Pinecone", "pgvector (PostgreSQL)", "ChromaDB"],
+    "databases": ["PostgreSQL (Supabase / Neon / AWS RDS)", "Redis (Cache & Queues)", "MongoDB"],
+    "cloud_devops": ["AWS (ECS, Lambda, S3, CloudFront)", "Microsoft Azure", "Docker", "Kubernetes", "GitHub Actions CI/CD"]
+  },
+  "blended_hourly_rate_usd": 45,
+  "inr_rate_multiplier": 85
+}
