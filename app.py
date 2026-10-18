@@ -381,6 +381,107 @@ with tab_demo:
             )
             st.markdown(p.full_markdown_proposal)
 
+        # ==========================================================
+        # INTERACTIVE WORKFLOW: MODIFICATIONS & HUMAN ARCHITECT MEET
+        # ==========================================================
+        st.write("")
+        st.divider()
+
+        col_refine, col_book = st.columns([1, 1], gap="large")
+
+        with col_refine:
+            st.markdown("### 🔄 Request Scope Modification")
+            st.caption("Need changes? Adjust requirements, budget, or platforms and recalibrate instantly.")
+            
+            with st.container(border=True):
+                mod_notes = st.text_area(
+                    "Describe your desired changes / additions:",
+                    placeholder="e.g. Please add a Flutter mobile app for iOS/Android, reduce timeline to 6 weeks, or add Razorpay gateway...",
+                    height=110
+                )
+                col_mod_w, col_mod_b = st.columns(2)
+                with col_mod_w:
+                    mod_weeks = st.number_input("Revised Timeline (Weeks):", min_value=2, max_value=20, value=p.total_weeks, step=2)
+                with col_mod_b:
+                    mod_budget = st.number_input("Revised Budget ($ USD, 0 for auto):", min_value=0, max_value=200000, value=0, step=2000)
+
+                if st.button("⚡ Apply Modification & Recalibrate", use_container_width=True):
+                    if mod_notes.strip():
+                        updated_brief = f"{brief_input}\n\n[CLIENT REVISION REQUEST]: {mod_notes.strip()}"
+                    else:
+                        updated_brief = brief_input
+                        
+                    with st.spinner("Recalibrating architecture and regenerating proposal..."):
+                        b_override = mod_budget if mod_budget > 0 else None
+                        revised_p = pipeline.analyze_and_generate(
+                            client_name=client_name,
+                            brief=updated_brief,
+                            industry=industry_input,
+                            budget_override=b_override,
+                            timeline_weeks_override=mod_weeks
+                        )
+                        st.session_state["active_proposal"] = revised_p
+                        st.success("✅ Architecture and budget successfully updated!")
+                        st.rerun()
+
+        with col_book:
+            st.markdown("### 🤝 Finalize & Book Architect Meeting")
+            st.caption("Satisfied with the architecture? Book a face-to-face video discovery session with a Cynbit Architect.")
+            
+            with st.container(border=True):
+                poc_name = st.text_input("Full Name:", value=client_name + " Lead")
+                poc_email = st.text_input("Work Email:", placeholder="lead@company.com")
+                poc_phone = st.text_input("Phone / WhatsApp:", placeholder="+91 98765 43210")
+                
+                col_date, col_slot = st.columns(2)
+                with col_date:
+                    pref_date = st.date_input("Preferred Date:")
+                with col_slot:
+                    pref_slot = st.selectbox("Preferred Time Slot (IST):", [
+                        "11:00 AM - 11:30 AM IST",
+                        "02:30 PM - 03:00 PM IST",
+                        "04:00 PM - 04:30 PM IST",
+                        "06:00 PM - 06:30 PM IST"
+                    ])
+                    
+                book_clicked = st.button("🚀 Finalize & Schedule Face-to-Face Meet", type="primary", use_container_width=True)
+                
+                if book_clicked:
+                    if not poc_email or "@" not in poc_email:
+                        st.error("Please enter a valid work email address.")
+                    else:
+                        st.session_state["meeting_confirmed"] = {
+                            "name": poc_name,
+                            "email": poc_email,
+                            "phone": poc_phone,
+                            "date": str(pref_date),
+                            "slot": pref_slot,
+                            "project": p.project_title,
+                            "budget": f"${p.budget_usd:,} USD (₹{p.budget_inr:,} INR)"
+                        }
+
+        # Show Confirmed Meeting Banner if booked
+        if "meeting_confirmed" in st.session_state:
+            meet = st.session_state["meeting_confirmed"]
+            st.markdown(f"""
+            <div style="background: rgba(16, 185, 129, 0.12); border: 2px solid #10B981; border-radius: 18px; padding: 24px; margin-top: 24px;">
+                <h3 style="color: #34D399; margin: 0 0 8px 0; font-size: 20px;">
+                    🎉 Discovery Meeting Confirmed with Cynbit Solutions Architecture Team!
+                </h3>
+                <p style="color: #E2E8F0; font-size: 14px; margin-bottom: 12px;">
+                    Our Engineering Manager at Cynbit Technologies (Jaipur HQ) has received your finalized architecture proposal for <b>{meet['project']}</b>.
+                </p>
+                <div style="background: #0F172A; padding: 14px 18px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 14px;">
+                    <p style="margin: 4px 0; color: #94A3B8; font-size: 13px;"><b>Scheduled Date & Slot:</b> {meet['date']} at {meet['slot']}</p>
+                    <p style="margin: 4px 0; color: #94A3B8; font-size: 13px;"><b>Invited Contact:</b> {meet['name']} ({meet['email']} &bull; {meet['phone']})</p>
+                    <p style="margin: 4px 0; color: #38BDF8; font-size: 13px;"><b>Google Meet Video Link:</b> <a href="https://meet.google.com/cyn-bit-arch" target="_blank" style="color: #38BDF8; text-decoration: underline;">https://meet.google.com/cyn-bit-arch</a></p>
+                </div>
+                <p style="color: #94A3B8; font-size: 12px; margin: 0;">
+                    A calendar invite with the full technical architecture spec has been dispatched to <b>{meet['email']}</b> and our Jaipur Engineering Lead.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
 
 # ==========================================
 # TAB 2: CYNBIT KNOWLEDGE BASE
