@@ -124,46 +124,77 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-def render_mermaid(code: str, height: int = 420):
-    """Renders Mermaid diagram with dark theme using CDN."""
+def render_mermaid(code: str, height: int = 480):
+    """Renders Mermaid diagram with dark theme using robust CDN and error handling."""
+    import re
+    # Clean up any potential markdown fences
+    clean_code = re.sub(r"^```(?:mermaid)?\s*", "", code.strip(), flags=re.IGNORECASE)
+    clean_code = re.sub(r"\s*```$", "", clean_code.strip()).strip()
+    if not (clean_code.startswith("graph") or clean_code.startswith("flowchart") or clean_code.startswith("sequenceDiagram")):
+        clean_code = "graph TD\n    " + clean_code
+
     html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
-        <script type="module">
-            import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-            mermaid.initialize({{ 
-                startOnLoad: true, 
-                theme: 'dark',
-                themeVariables: {{
-                    primaryColor: '#3B82F6',
-                    primaryTextColor: '#F8FAFC',
-                    primaryBorderColor: '#60A5FA',
-                    lineColor: '#94A3B8',
-                    secondaryColor: '#8B5CF6',
-                    tertiaryColor: '#0EA5E9'
-                }}
-            }});
-        </script>
+        <meta charset="utf-8">
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
         <style>
             body {{
                 background-color: transparent;
                 margin: 0;
+                padding: 10px;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                font-family: 'Plus Jakarta Sans', sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             }}
             .mermaid {{
                 width: 100%;
                 text-align: center;
             }}
+            .mermaid svg {{
+                max-width: 100% !important;
+                height: auto !important;
+            }}
         </style>
     </head>
     <body>
-        <div class="mermaid">
-        {code}
+        <div id="diagram" class="mermaid">
+{clean_code}
         </div>
+        <script>
+            function render() {{
+                try {{
+                    mermaid.initialize({{
+                        startOnLoad: false,
+                        theme: 'dark',
+                        securityLevel: 'loose',
+                        themeVariables: {{
+                            darkMode: true,
+                            background: 'transparent',
+                            primaryColor: '#2563EB',
+                            primaryTextColor: '#FFFFFF',
+                            primaryBorderColor: '#60A5FA',
+                            lineColor: '#94A3B8',
+                            secondaryColor: '#7C3AED',
+                            tertiaryColor: '#0EA5E9'
+                        }}
+                    }});
+                    mermaid.run({{
+                        querySelector: '#diagram'
+                    }});
+                }} catch (e) {{
+                    console.error("Mermaid error:", e);
+                    document.getElementById('diagram').innerHTML = '<pre style="color:#F87171;text-align:left;font-size:12px;">Diagram syntax preview:\\n' + e.message + '</pre>';
+                }}
+            }}
+            if (document.readyState === 'loading') {{
+                document.addEventListener('DOMContentLoaded', render);
+            }} else {{
+                render();
+            }}
+        </script>
     </body>
     </html>
     """

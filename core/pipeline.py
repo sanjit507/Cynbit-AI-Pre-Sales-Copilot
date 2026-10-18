@@ -298,10 +298,14 @@ Synthesize a production-ready solution now in valid JSON format.
         for tm in team_members:
             team_md += f"- **{tm['role']} ({tm['fte']}):** {tm['tasks']}\n"
 
-        mermaid_code = data.get("mermaid_diagram", "graph TD\nClient --> Gateway --> Backend --> Database")
-        # Ensure graph TD header exists
-        if not mermaid_code.strip().startswith("graph") and not mermaid_code.strip().startswith("flowchart"):
-            mermaid_code = "graph TD\n" + mermaid_code
+        mermaid_raw = data.get("mermaid_diagram", "graph TD\n    Client[Client App] --> Gateway[API Gateway]\n    Gateway --> CoreAPI[Backend Service]\n    CoreAPI --> DB[(Database)]")
+        # Strip code blocks or quotes
+        mermaid_clean = re.sub(r"^```(?:mermaid)?\s*", "", mermaid_raw.strip(), flags=re.IGNORECASE)
+        mermaid_clean = re.sub(r"\s*```$", "", mermaid_clean.strip())
+        mermaid_clean = mermaid_clean.strip()
+        if not (mermaid_clean.startswith("graph") or mermaid_clean.startswith("flowchart")):
+            mermaid_clean = "graph TD\n    " + mermaid_clean
+        mermaid_code = mermaid_clean
 
         full_proposal = PROPOSAL_TEMPLATE.format(
             client_name=client_name,
