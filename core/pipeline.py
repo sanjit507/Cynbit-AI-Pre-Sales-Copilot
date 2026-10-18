@@ -1,14 +1,19 @@
 """
 Core Pipeline Engine: Ingestion, Architecture Synthesis, Estimation & Proposal Generation
-Supports both Live LLM APIs (Groq, OpenAI, Gemini) and an Intelligent Deterministic Fallback.
+Full Google Gemini AI Integration with Deterministic Fallback.
 """
 
 import json
 import os
 import re
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Tuple
-from pydantic import BaseModel, Field
+from typing import Dict, List, Any, Optional
+from pydantic import BaseModel
+import requests
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from core.kb import (
     CYNBIT_COMPANY_INFO,
@@ -49,12 +54,20 @@ class ArchitectureProposal(BaseModel):
     budget_inr: int
     team_members: List[Dict[str, Any]]
     full_markdown_proposal: str
+    generated_by: str = "Cynbit Blueprint Engine"
 
 
 class PreSalesPipeline:
-    def __init__(self, api_key: Optional[str] = None, provider: str = "auto"):
-        self.api_key = api_key or os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY")
-        self.provider = provider
+    def __init__(self, engine_mode: str = "gemini"):
+        self.engine_mode = engine_mode
+        self.gemini_api_key = (
+            os.getenv("GEMINI_API_KEY") or 
+            os.getenv("GOOGLE_API_KEY") or 
+            ""
+        ).strip()
+
+    def has_valid_gemini_key(self) -> bool:
+        return bool(self.gemini_api_key and self.gemini_api_key != "your_gemini_api_key_here")
 
     def analyze_and_generate(
         self,
@@ -62,27 +75,35 @@ class PreSalesPipeline:
         brief: str,
         industry: Optional[str] = None,
         budget_override: Optional[int] = None,
-        timeline_weeks_override: Optional[int] = None
+        timeline_weeks_override: Optional[int] = None,
+        force_engine: Optional[str] = None
     ) -> ArchitectureProposal:
         """
         Executes multi-stage reasoning to generate full architecture and proposal.
         """
-        # Determine domain and key drivers from brief
+        engine_to_use = force_engine or self.engine_mode
         detected_domain = self._detect_domain(brief, industry)
-        
-        # If API key is provided and valid format, attempt live generation
-        if self.api_key and len(self.api_key.strip()) > 10:
+
+        # If user selected Gemini and a key is available in .env
+        if engine_to_use == "gemini" and self.has_valid_gemini_key():
             try:
-                return self._generate_with_llm(
-                    client_name, brief, detected_domain, budget_override, timeline_weeks_override
+                return self._generate_with_gemini(
+                    client_name=client_name,
+                    brief=brief,
+                    domain=detected_domain,
+                    budget_override=budget_override,
+                    timeline_override=timeline_weeks_override
                 )
             except Exception as e:
-                # Graceful fallback to heuristic engine on API failure
-                print(f"LLM API Call failed ({e}), falling back to Heuristic Engine.")
+                print(f"[Gemini API Notice] API execution failed: {e}. Falling back to Blueprint Engine.")
 
-        # Default / Fallback: Intelligent Semantic Heuristic Engine
+        # Fallback / Rule engine
         return self._generate_with_heuristics(
-            client_name, brief, detected_domain, budget_override, timeline_weeks_override
+            client_name=client_name,
+            brief=brief,
+            domain=detected_domain,
+            budget_override=budget_override,
+            timeline_override=timeline_weeks_override
         )
 
     def _detect_domain(self, brief: str, specified_industry: Optional[str]) -> str:
@@ -95,10 +116,227 @@ class PreSalesPipeline:
             return "Enterprise Logistics & FinTech"
         elif any(w in text for w in ["code", "student", "academy", "learning", "course", "exam", "education", "edtech"]):
             return "EdTech & Developer Platforms"
+        elif any(w in text for w in ["wordpress", "woocommerce", "shopify", "cms", "ecommerce", "store", "shop"]):
+            return "E-Commerce & Digital Commerce"
         elif any(w in text for w in ["review", "reputation", "feedback", "rating", "google review"]):
             return "Reputation & Sentiment SaaS"
         else:
-            return specified_industry or "Enterprise SaaS & AI Automation"
+            return specified_industry or "Enterprise Custom Software & AI"
+
+    def _generate_with_gemini(
+        self,
+        client_name: str,
+        brief: str,
+        domain: str,
+        budget_override: Optional[int],
+        timeline_override: Optional[int]
+    ) -> ArchitectureProposal:
+        """
+        Direct integration with Google Gemini AI API.
+        Generates full architecture, Mermaid diagram, and proposal tailored to any custom client request.
+        """
+        # Try gemini-1.5-flash or gemini-2.0-flash
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_api_key}"
+
+        target_weeks = timeline_override or 8
+        target_sprints = max(2, target_weeks // 2)
+        target_hours = target_weeks * 45
+        target_budget_usd = budget_override or (target_hours * COMMERCIAL_METRICS["blended_hourly_rate_usd"])
+        target_budget_inr = target_budget_usd * COMMERCIAL_METRICS["inr_fx_rate"]
+        today_str = datetime.now().strftime("%B %d, %Y")
+
+        system_instruction = f"""
+You are the Principal Solutions Architect at Cynbit Technologies (https://www.cynbit.in), Jaipur, India.
+Your motto: "The Optimistic Architect: The speed of a startup, the rigor of an enterprise."
+You must analyze the client's problem brief and generate a complete, structured technical solution.
+
+Ground your architecture in modern production technologies that Cynbit uses:
+- Modern Web/Mobile: Next.js 14/15, React 19, TypeScript, TailwindCSS, Flutter, or Headless WordPress/Shopify if requested.
+- Scalable Backends: Python (FastAPI), Go, Rust, Node.js.
+- AI & Automation: LangGraph, LlamaIndex, OpenAI GPT-4o, Claude 3.5, Google Gemini, Document AI, AI Voice Agents.
+- Data Layer: PostgreSQL 16 (AWS RDS/Supabase), Redis Caching, Qdrant / Pinecone Vector Store.
+- Cloud & Security: AWS (ECS, Lambda, S3, CloudFront), Azure, Docker, Zero-Trust OAuth2.
+
+You MUST respond strictly with valid JSON (no surrounding markdown code blocks, just pure JSON).
+The JSON MUST follow this exact schema:
+{{
+  "project_title": "String",
+  "executive_summary": "String (2-3 paragraphs explaining client's pain points and Cynbit's strategic solution)",
+  "architecture_overview": "String (comprehensive technical explanation of the layers)",
+  "mermaid_diagram": "graph TD\\n... (valid Mermaid.js flowchart code without backticks)",
+  "components": [
+    {{
+      "layer": "Presentation Layer / API Gateway / Core Logic / AI Engine / Database",
+      "component_name": "String",
+      "technology": "String",
+      "rationale": "String"
+    }}
+  ],
+  "tech_stack": {{
+    "Frontend": ["item1", "item2"],
+    "Backend & APIs": ["item1", "item2"],
+    "AI / ML & Agents": ["item1", "item2"],
+    "Databases & Storage": ["item1", "item2"],
+    "DevOps & Security": ["item1", "item2"]
+  }},
+  "sprints": [
+    {{
+      "sprint_number": 1,
+      "title": "String",
+      "weeks": "Weeks 1 - 2",
+      "milestones": ["Milestone 1", "Milestone 2", "Milestone 3"]
+    }}
+  ],
+  "team_members": [
+    {{
+      "role": "Principal Solutions Architect",
+      "fte": "0.25 FTE",
+      "tasks": "Architecture design and security audit"
+    }},
+    {{
+      "role": "Senior AI / Full-Stack Engineer",
+      "fte": "2.00 FTE",
+      "tasks": "Implementation of APIs and UI"
+    }}
+  ]
+}}
+"""
+
+        user_content = f"""
+CLIENT SPECIFICATIONS:
+- Client Name: {client_name}
+- Industry: {domain}
+- Target Timeline: {target_weeks} Weeks ({target_sprints} Sprints)
+- Target Investment: ${target_budget_usd:,} USD (₹{target_budget_inr:,} INR)
+- Client Brief & Requirements:
+{brief}
+
+Synthesize a production-ready solution now in valid JSON format.
+"""
+
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": system_instruction + "\n\n" + user_content}
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.2,
+                "maxOutputTokens": 3500,
+                "responseMimeType": "application/json"
+            }
+        }
+
+        headers = {"Content-Type": "application/json"}
+        resp = requests.post(url, headers=headers, json=payload, timeout=35)
+        
+        # If model error or rate limit, retry with gemini-2.0-flash
+        if resp.status_code != 200:
+            url_fallback = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.gemini_api_key}"
+            resp = requests.post(url_fallback, headers=headers, json=payload, timeout=35)
+
+        resp.raise_for_status()
+        resp_json = resp.json()
+        raw_output = resp_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+        # Clean JSON if wrapped in markdown
+        cleaned_json = raw_output
+        if cleaned_json.startswith("```json"):
+            cleaned_json = cleaned_json[7:]
+        if cleaned_json.endswith("```"):
+            cleaned_json = cleaned_json[:-3]
+        cleaned_json = cleaned_json.strip()
+
+        data = json.loads(cleaned_json)
+
+        # Parse components
+        components_list = []
+        for c in data.get("components", []):
+            components_list.append(
+                ArchitecturalComponent(
+                    layer=c.get("layer", "Application Layer"),
+                    component_name=c.get("component_name", "Core Service"),
+                    technology=c.get("technology", "Python / Next.js"),
+                    rationale=c.get("rationale", "Scalable performance")
+                )
+            )
+
+        # Parse sprints
+        sprints_list = []
+        for s in data.get("sprints", []):
+            sprints_list.append(
+                SprintPlan(
+                    sprint_number=s.get("sprint_number", 1),
+                    title=s.get("title", "Development Sprint"),
+                    weeks=s.get("weeks", "Weeks 1 - 2"),
+                    milestones=s.get("milestones", ["Implementation and testing"])
+                )
+            )
+
+        # Build sprint markdown
+        sprint_md = ""
+        for s in sprints_list:
+            sprint_md += f"### Sprint {s.sprint_number}: {s.title} ({s.weeks})\n"
+            for m in s.milestones:
+                sprint_md += f"- [ ] {m}\n"
+            sprint_md += "\n"
+
+        # Build tech stack markdown
+        tech_stack = data.get("tech_stack", CYNBIT_STACK_CATALOG)
+        stack_md = ""
+        for cat, items in tech_stack.items():
+            stack_md += f"- **{cat}:** {', '.join(items)}\n"
+
+        # Build team markdown
+        team_members = data.get("team_members", [
+            {"role": "Principal Solutions Architect", "fte": "0.25 FTE", "tasks": "Architecture & Security"},
+            {"role": "Senior Full-Stack Engineer", "fte": "2.00 FTE", "tasks": "Application Development"}
+        ])
+        team_md = ""
+        for tm in team_members:
+            team_md += f"- **{tm['role']} ({tm['fte']}):** {tm['tasks']}\n"
+
+        mermaid_code = data.get("mermaid_diagram", "graph TD\nClient --> Gateway --> Backend --> Database")
+        # Ensure graph TD header exists
+        if not mermaid_code.strip().startswith("graph") and not mermaid_code.strip().startswith("flowchart"):
+            mermaid_code = "graph TD\n" + mermaid_code
+
+        full_proposal = PROPOSAL_TEMPLATE.format(
+            client_name=client_name,
+            date_str=today_str,
+            timeline_weeks=target_weeks,
+            num_sprints=len(sprints_list) or target_sprints,
+            executive_summary=data.get("executive_summary", "Custom technical solution crafted by Cynbit."),
+            architecture_description=data.get("architecture_overview", "Decoupled multi-tier enterprise architecture."),
+            mermaid_code=mermaid_code,
+            tech_stack_breakdown=stack_md,
+            sprint_breakdown=sprint_md,
+            team_allocation=team_md,
+            total_hours=target_hours,
+            budget_usd=target_budget_usd,
+            budget_inr=target_budget_inr
+        )
+
+        return ArchitectureProposal(
+            client_name=client_name,
+            industry=domain,
+            project_title=data.get("project_title", f"{client_name} Custom Solution Architecture"),
+            executive_summary=data.get("executive_summary", ""),
+            architecture_overview=data.get("architecture_overview", ""),
+            mermaid_diagram=mermaid_code,
+            components=components_list,
+            tech_stack=tech_stack,
+            sprints=sprints_list,
+            total_weeks=target_weeks,
+            total_hours=target_hours,
+            budget_usd=target_budget_usd,
+            budget_inr=target_budget_inr,
+            team_members=team_members,
+            full_markdown_proposal=full_proposal,
+            generated_by="Google Gemini AI (Live Model)"
+        )
 
     def _generate_with_heuristics(
         self,
@@ -112,9 +350,7 @@ class PreSalesPipeline:
         High-precision deterministic engine generating verified Cynbit architecture.
         """
         today_str = datetime.now().strftime("%B %d, %Y")
-        text_lower = brief.lower()
 
-        # Domain specific tailoring
         if domain == "Healthcare & Clinics":
             project_title = f"{client_name} Omnichannel AI Healthcare & Review Ecosystem"
             reference_pattern = "Revio + Autonomous Voice AI Agent"
@@ -213,6 +449,56 @@ class PreSalesPipeline:
     RentEngine --> Cache
     LeaseEngine --> DB"""
 
+        elif domain == "E-Commerce & Digital Commerce":
+            project_title = f"{client_name} High-Performance Headless E-Commerce & AI Shopping Platform"
+            reference_pattern = "Cynbit High-Scale Headless Commerce Architecture"
+            fe_tech = ["Next.js 15 (Storefront App Router)", "TailwindCSS", "Framer Motion", "PWA Support"]
+            be_tech = ["Headless WordPress / WooCommerce CMS API", "Python FastAPI (Middleware & Inventory)", "Redis Caching"]
+            ai_tech = ["AI Conversational Shopping Assistant", "Semantic Product Recommendation Engine (Qdrant)"]
+            db_tech = ["PostgreSQL 16 (Orders & Customers)", "MySQL (WordPress CMS)", "Redis (Cart & Session)"]
+            cloud_tech = ["AWS CloudFront CDN", "AWS ECS Fargate (API)", "AWS RDS", "Razorpay / Stripe Gateway"]
+            base_weeks = 6
+            base_hours = 270
+
+            mermaid_code = """graph TD
+    subgraph CustomerTouchpoints [Customer Experience]
+        Browser[Modern Next.js 15 Storefront]
+        MobilePWA[Mobile Progressive Web App]
+        AIChat[AI Product Recommendation Chat]
+    end
+
+    subgraph GatewayLayer [Edge & Security Layer]
+        CloudFront[AWS CloudFront Edge CDN]
+        RateLimiter[FastAPI API Gateway & JWT Auth]
+    end
+
+    subgraph ServiceMesh [Decoupled Backend Services]
+        WPCMS[Headless WordPress & WooCommerce Core]
+        InventoryAPI[FastAPI Inventory & Order Microservice]
+        AIAgent[Conversational Shopping & Stylist Bot]
+        PaymentGateway[Razorpay / Stripe Webhook Listener]
+    end
+
+    subgraph DataTier [Scalable Storage & Cache]
+        Postgres[(PostgreSQL Orders & Customer DB)]
+        RedisCache[(Redis Distributed Cart Cache)]
+        VectorDB[(Qdrant Product Embeddings Store)]
+    end
+
+    Browser --> CloudFront
+    MobilePWA --> CloudFront
+    CloudFront --> RateLimiter
+
+    RateLimiter --> WPCMS
+    RateLimiter --> InventoryAPI
+    RateLimiter --> AIAgent
+    RateLimiter --> PaymentGateway
+
+    AIAgent --> VectorDB
+    InventoryAPI --> Postgres
+    InventoryAPI --> RedisCache
+    PaymentGateway --> Postgres"""
+
         elif domain == "Enterprise Logistics & FinTech":
             project_title = f"{client_name} Cognitive Document Processing & SAP 3-Way Matching Engine"
             reference_pattern = "Cynbit LLM Cognitive Automation Suite"
@@ -305,11 +591,11 @@ class PreSalesPipeline:
     LeaderboardCache --> RadarView"""
 
         else:
-            project_title = f"{client_name} Autonomous AI Transformation Platform"
+            project_title = f"{client_name} Enterprise Custom Software & AI System"
             reference_pattern = "Cynbit Autonomous Agent Suite"
             fe_tech = ["Next.js 14 App Router", "React 19", "TailwindCSS", "TypeScript"]
             be_tech = ["Python (FastAPI)", "Redis Queues", "Async Worker Cluster"]
-            ai_tech = ["LangGraph Multi-Agent Engine", "OpenAI GPT-4o / Claude 3.5", "RAG Pipeline"]
+            ai_tech = ["LangGraph Multi-Agent Engine", "OpenAI GPT-4o / Gemini 1.5", "RAG Pipeline"]
             db_tech = ["PostgreSQL 16", "Qdrant Vector Database", "Redis Cache"]
             cloud_tech = ["AWS ECS Fargate", "AWS S3", "Docker", "GitHub Actions"]
             base_weeks = 8
@@ -344,7 +630,7 @@ class PreSalesPipeline:
         # Overrides & calculations
         total_weeks = timeline_override or base_weeks
         total_sprints = max(2, total_weeks // 2)
-        total_hours = (total_weeks * 45) if not timeline_override else (timeline_override * 45)
+        total_hours = total_weeks * 45
         
         rate_usd = COMMERCIAL_METRICS["blended_hourly_rate_usd"]
         fx_inr = COMMERCIAL_METRICS["inr_fx_rate"]
@@ -360,7 +646,7 @@ class PreSalesPipeline:
                 weeks="Weeks 1 - 2",
                 milestones=[
                     "Finalize technical specifications and OpenAPI contracts",
-                    "Setup GitHub CI/CD pipelines and AWS/Azure cloud environments",
+                    "Setup GitHub CI/CD pipelines and AWS cloud environments",
                     "Initialize Next.js frontend framework and database schemas"
                 ]
             ),
@@ -410,7 +696,6 @@ class PreSalesPipeline:
                 )
             )
 
-        # Team allocation
         team_members = [
             {"role": "Principal Solutions Architect", "fte": "0.25 FTE", "tasks": "System architecture, security design, milestone reviews"},
             {"role": "Senior AI / ML Engineer", "fte": "1.00 FTE", "tasks": "Agentic workflows, prompt tuning, vector search, LLM integrations"},
@@ -418,7 +703,6 @@ class PreSalesPipeline:
             {"role": "QA & Cloud DevOps Engineer", "fte": "0.50 FTE", "tasks": "Docker orchestration, CI/CD pipelines, load testing, security"}
         ]
 
-        # Components breakdown
         components = [
             ArchitecturalComponent(
                 layer="Presentation Layer",
@@ -460,9 +744,8 @@ class PreSalesPipeline:
             "DevOps & Security": cloud_tech
         }
 
-        # Executive summary text
         executive_summary = (
-            f"{client_name} operates in the {domain} sector with a clear opportunity to modernize its operations "
+            f"{client_name} operates in the {domain} sector with an opportunity to modernize its operations "
             f"through custom AI automation and resilient digital architecture. Based on the client brief, the primary "
             f"operational pain points involve manual coordination bottlenecks, slow response cycles, and decentralized data. "
             f"Cynbit Technologies recommends architecting a high-performance, modular system drawing directly from our "
@@ -477,7 +760,6 @@ class PreSalesPipeline:
             f"The architecture is engineered for 99.9% availability, zero-trust role-based access, and sub-second response times."
         )
 
-        # Build sprint markdown
         sprint_md = ""
         for s in sprints_list:
             sprint_md += f"### Sprint {s.sprint_number}: {s.title} ({s.weeks})\n"
@@ -485,17 +767,14 @@ class PreSalesPipeline:
                 sprint_md += f"- [ ] {m}\n"
             sprint_md += "\n"
 
-        # Build tech stack markdown
         stack_md = ""
         for cat, items in tech_stack.items():
             stack_md += f"- **{cat}:** {', '.join(items)}\n"
 
-        # Build team markdown
         team_md = ""
         for tm in team_members:
             team_md += f"- **{tm['role']} ({tm['fte']}):** {tm['tasks']}\n"
 
-        # Render full markdown proposal
         full_proposal = PROPOSAL_TEMPLATE.format(
             client_name=client_name,
             date_str=today_str,
@@ -527,85 +806,6 @@ class PreSalesPipeline:
             budget_usd=calculated_budget_usd,
             budget_inr=calculated_budget_inr,
             team_members=team_members,
-            full_markdown_proposal=full_proposal
-        )
-
-    def _generate_with_llm(
-        self,
-        client_name: str,
-        brief: str,
-        domain: str,
-        budget_override: Optional[int],
-        timeline_override: Optional[int]
-    ) -> ArchitectureProposal:
-        """
-        Calls live LLM provider (OpenAI or Groq compatible endpoint) using standard requests.
-        """
-        import requests
-
-        is_groq = self.api_key.startswith("gsk_")
-        url = "https://api.groq.com/openai/v1/chat/completions" if is_groq else "https://api.openai.com/v1/chat/completions"
-        model_name = "llama-3.3-70b-versatile" if is_groq else "gpt-4o-mini"
-
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-
-        user_prompt = f"""
-Client Name: {client_name}
-Industry: {domain}
-Client Problem Brief:
-{brief}
-
-Synthesize a comprehensive technical proposal. Ground in Cynbit's validated stack (Next.js, FastAPI, Rust/Go, LangGraph, Qdrant, PostgreSQL, AWS).
-Return the proposal adhering strictly to this markdown structure:
-1. Executive Summary
-2. Recommended Architecture
-3. Mermaid.js Flowchart (valid graph TD syntax)
-4. Recommended Cynbit Tech Stack
-5. Work Breakdown Structure (Sprints)
-6. Commercials (Total Weeks: {timeline_override or 8}, Budget USD: {budget_override or 25000})
-"""
-
-        payload = {
-            "model": model_name,
-            "messages": [
-                {"role": "system", "content": CYNBIT_COPILOT_SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt}
-            ],
-            "temperature": 0.3,
-            "max_tokens": 2500
-        }
-
-        response = requests.post(url, headers=headers, json=payload, timeout=25)
-        response.raise_for_status()
-        res_data = response.json()
-        generated_text = res_data["choices"][0]["message"]["content"]
-
-        # Parse mermaid diagram from output
-        mermaid_match = re.search(r"```mermaid\n(.*?)\n```", generated_text, re.DOTALL)
-        mermaid_code = mermaid_match.group(1).strip() if mermaid_match else "graph TD\nClient --> API --> Core --> DB"
-
-        total_weeks = timeline_override or 8
-        total_hours = total_weeks * 45
-        budget_usd = budget_override or (total_hours * 45)
-        budget_inr = budget_usd * 85
-
-        return ArchitectureProposal(
-            client_name=client_name,
-            industry=domain,
-            project_title=f"{client_name} AI Solution Architecture",
-            executive_summary=f"Custom AI solution designed by Cynbit Technologies for {client_name}.",
-            architecture_overview="Enterprise decoupled multi-tier architecture with autonomous AI capabilities.",
-            mermaid_diagram=mermaid_code,
-            components=[],
-            tech_stack=CYNBIT_STACK_CATALOG,
-            sprints=[],
-            total_weeks=total_weeks,
-            total_hours=total_hours,
-            budget_usd=budget_usd,
-            budget_inr=budget_inr,
-            team_members=[],
-            full_markdown_proposal=generated_text
+            full_markdown_proposal=full_proposal,
+            generated_by="Cynbit Blueprint Engine (Rule Mode)"
         )

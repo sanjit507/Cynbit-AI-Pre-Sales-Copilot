@@ -1,13 +1,17 @@
 """
 Cynbit AI Pre-Sales & Solution Architecture Copilot
-Technical Assessment Proof of Concept for AI/ML Engineer Intern
-Applicant: Sanjit Chaudhary | Company: Cynbit Technologies Pvt. Ltd., Jaipur
+Enterprise Workbench for Solutions Architects & Pre-Sales Engineering
+Company: Cynbit Technologies Pvt. Ltd., Jaipur (https://www.cynbit.in)
 """
 
 import os
 import streamlit as st
 import streamlit.components.v1 as components
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load .env
+load_dotenv()
 
 from core.kb import (
     CYNBIT_COMPANY_INFO,
@@ -92,6 +96,30 @@ st.markdown("""
         margin: 4px;
         display: inline-block;
     }
+    
+    .engine-badge-gemini {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34D399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-block;
+        margin-bottom: 12px;
+    }
+    
+    .engine-badge-rule {
+        background: rgba(56, 189, 248, 0.15);
+        color: #38BDF8;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-block;
+        margin-bottom: 12px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -142,33 +170,41 @@ def render_mermaid(code: str, height: int = 420):
     components.html(html_content, height=height, scrolling=True)
 
 
-# Sidebar Configuration
+# Initialize Pipeline
+pipeline = PreSalesPipeline()
+has_gemini = pipeline.has_valid_gemini_key()
+
+# Sidebar Configuration (Cleaned up as requested)
 with st.sidebar:
     st.image("https://cynbit.in/logo.svg", width=160)
     st.markdown("### ⚡ Pre-Sales AI Engine")
-    st.caption("Engineered for Cynbit Solutions Architects")
+    st.caption("Internal Workbench for Solutions Architects")
     
     st.divider()
     
-    st.markdown("#### ⚙️ Engine Settings")
-    api_key_input = st.text_input(
-        "LLM API Key (Optional)",
-        type="password",
-        help="Supports Groq (gsk_...) or OpenAI (sk-...). If left blank, the app uses Cynbit's high-fidelity Heuristic Engine."
+    st.markdown("#### ⚙️ Engine Mode")
+    engine_choice = st.radio(
+        "Select Reasoning Engine:",
+        ["🤖 Google Gemini AI (Live)", "⚡ Cynbit Blueprint Engine (Rule)"],
+        index=0 if has_gemini else 1,
+        help="Google Gemini reads GEMINI_API_KEY from .env to generate dynamic solutions. Blueprint Engine is deterministic."
     )
     
-    if api_key_input:
-        st.success("🟢 Live LLM API Connected")
+    selected_engine_key = "gemini" if "Gemini" in engine_choice else "rule"
+    
+    if selected_engine_key == "gemini":
+        if has_gemini:
+            st.success("🟢 Google Gemini API Connected (via .env)")
+        else:
+            st.warning("⚠️ No Gemini Key found in `.env`.\nAdd `GEMINI_API_KEY=...` to `.env` or app will use Blueprint Engine.")
     else:
-        st.info("⚡ Heuristic Semantic Mode Active (100% Offline & Instant)")
+        st.info("⚡ Blueprint Engine Active (Offline Heuristic)")
         
     st.divider()
     
-    st.markdown("#### 👤 Candidate Details")
-    st.markdown("**Applicant:** Sanjit Chaudhary")
-    st.markdown("**Role:** AI/ML Engineer Intern")
-    st.markdown("**Company:** Cynbit Technologies")
-    st.markdown("**Headquarters:** Jaipur, Rajasthan")
+    st.markdown("#### 🏢 Cynbit HQ")
+    st.markdown(f"**Location:** {CYNBIT_COMPANY_INFO['location']}")
+    st.markdown(f"**Email:** {CYNBIT_COMPANY_INFO['contact_email']}")
     st.markdown(f"**Website:** [cynbit.in]({CYNBIT_COMPANY_INFO['website']})")
     
     st.divider()
@@ -178,12 +214,12 @@ with st.sidebar:
 # Top Banner
 st.markdown("""
 <div class="cynbit-header">
-    <div class="brand-badge">Cynbit Technologies — Internal Pre-Sales Tool</div>
+    <div class="brand-badge">Cynbit Technologies — Pre-Sales Engineering</div>
     <h1 style="color: #FFFFFF; font-size: 32px; font-weight: 800; margin: 0 0 8px 0;">
         ⚡ AI Pre-Sales & Solution Architecture Copilot
     </h1>
     <p style="color: #94A3B8; font-size: 15px; margin: 0; line-height: 1.5;">
-        Transform messy, unstructured client briefs into production-ready system architecture blueprints, 
+        Transform unstructured client discovery requests into production-grade system architectures, 
         accurate sprint milestones, and client-ready commercial proposals in seconds.
     </p>
 </div>
@@ -220,13 +256,13 @@ with tab_demo:
             default_industry = preset["industry"]
             default_brief = preset["brief"]
         else:
-            default_client = "NovaHealth Diagnostics"
-            default_industry = "Healthcare & Telemedicine"
+            default_client = "StyleHub E-Commerce"
+            default_industry = "E-Commerce & Digital Commerce"
             default_brief = (
-                "We need an AI-driven remote patient diagnostics platform. "
-                "Patients upload lab reports and radiology images via mobile web. "
-                "We need an automated OCR and medical vision extraction agent, a real-time doctor consultation "
-                "video room with automated meeting summaries, and a HIPAA-compliant encrypted patient record database."
+                "We need a high-performance modern website for our fashion brand. "
+                "We have 1,000 product SKUs, need Razorpay payment gateway integration, "
+                "automated WhatsApp order notifications, an admin inventory management portal, "
+                "and an AI conversational shopping assistant to help customers pick outfits."
             )
             
         client_name = st.text_input("Prospective Client Name:", value=default_client)
@@ -249,29 +285,41 @@ with tab_demo:
         )
         
         st.markdown("#### 3. Execution Trigger")
+        if selected_engine_key == "gemini" and has_gemini:
+            st.markdown('<span class="engine-badge-gemini">Using: Google Gemini AI</span>', unsafe_allow_html=True)
+        else:
+            st.markdown('<span class="engine-badge-rule">Using: Cynbit Blueprint Engine</span>', unsafe_allow_html=True)
+            
         generate_clicked = st.button("⚡ Generate Architecture & Proposal", type="primary", use_container_width=True)
         
     # Execution
     if generate_clicked:
-        with st.spinner("Analyzing requirements, selecting Cynbit stack, and generating architecture..."):
-            pipeline = PreSalesPipeline(api_key=api_key_input)
+        with st.spinner("Analyzing requirements, selecting Cynbit architecture, and generating proposal..."):
             b_override = budget_override if budget_override > 0 else None
             proposal: ArchitectureProposal = pipeline.analyze_and_generate(
                 client_name=client_name,
                 brief=brief_input,
                 industry=industry_input,
                 budget_override=b_override,
-                timeline_weeks_override=target_weeks
+                timeline_weeks_override=target_weeks,
+                force_engine=selected_engine_key
             )
             st.session_state["active_proposal"] = proposal
-            st.success("✅ Solution Architecture & Commercial Proposal successfully synthesized!")
+            st.success(f"✅ Solution Architecture synthesized via **{proposal.generated_by}**!")
 
     # Display Results if available
     if "active_proposal" in st.session_state:
         p: ArchitectureProposal = st.session_state["active_proposal"]
         
         st.divider()
-        st.markdown(f"### 🎯 Results for: `{p.client_name}` ({p.industry})")
+        col_res_header, col_badge = st.columns([8, 2])
+        with col_res_header:
+            st.markdown(f"### 🎯 Results for: `{p.client_name}` ({p.industry})")
+        with col_badge:
+            if "Gemini" in p.generated_by:
+                st.markdown('<span class="engine-badge-gemini">🤖 Generated by Gemini AI</span>', unsafe_allow_html=True)
+            else:
+                st.markdown('<span class="engine-badge-rule">⚡ Generated by Blueprint</span>', unsafe_allow_html=True)
         
         # Key Metrics Row
         m1, m2, m3, m4 = st.columns(4)
@@ -432,13 +480,12 @@ with tab_report2:
         st.error("TECHNICAL_APPROACH.md file not found in docs/")
 
 
-# Footer
+# Clean Professional Footer
 st.divider()
 st.markdown("""
 <div style="text-align: center; color: #64748B; font-size: 13px; padding: 20px 0;">
-    <b>Applicant / Submission:</b> Sanjit Chaudhary &bull; 
-    <b>Position:</b> AI/ML Engineer Intern &bull; 
-    <b>Target Company:</b> Cynbit Technologies Pvt. Ltd., Jaipur &bull; 
-    <b>Submission Window:</b> October 2026
+    <b>Cynbit Technologies Pvt. Ltd.</b> &bull; 
+    Pratap Nagar, Jaipur, Rajasthan &bull; 
+    <i>The Optimistic Architect: The speed of a startup, the rigor of an enterprise.</i>
 </div>
 """, unsafe_allow_html=True)
