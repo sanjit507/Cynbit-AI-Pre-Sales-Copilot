@@ -172,7 +172,8 @@ def render_mermaid(code: str, height: int = 420):
 
 # Initialize Pipeline
 pipeline = PreSalesPipeline()
-has_gemini = pipeline.has_valid_gemini_key()
+gemini_env_key = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
+has_gemini = bool(gemini_env_key and gemini_env_key != "your_gemini_api_key_here")
 
 # Sidebar Configuration (Cleaned up as requested)
 with st.sidebar:
