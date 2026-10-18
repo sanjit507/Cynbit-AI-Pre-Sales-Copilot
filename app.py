@@ -326,13 +326,56 @@ with tab_demo:
             
         st.write("")
         
-        # Sub-tabs for Proposal Details
-        prop_tab1, prop_tab2, prop_tab3, prop_tab4 = st.tabs([
+        # Sub-tabs for Proposal Details (Non-Technical First)
+        prop_tab0, prop_tab1, prop_tab2, prop_tab3, prop_tab4 = st.tabs([
+            "💡 Plain-English Guide (Non-Technical)",
             "📊 System Architecture Diagram",
-            "🧩 Component & Stack Breakdown",
+            "🧩 Tech Stack & Components",
             "📅 Sprint Breakdown (WBS)",
-            "📄 Client-Ready Proposal (Markdown)"
+            "📄 Client Proposal Document"
         ])
+
+        with prop_tab0:
+            st.markdown("### 💡 What We Are Building For You (In Simple Words)")
+            st.markdown(
+                "You don't need a technical background to understand this project. "
+                "Here is how your new system works, what you receive, and how it grows your business."
+            )
+            st.write("")
+
+            col_nt1, col_nt2 = st.columns([1, 1], gap="large")
+            with col_nt1:
+                with st.container(border=True):
+                    st.markdown("#### 🎯 1. The Core Objective")
+                    st.write(p.executive_summary)
+
+                with st.container(border=True):
+                    st.markdown("#### 👥 2. How Your Customers Experience It")
+                    st.markdown("""
+                    - **Instant Access Anywhere:** Your customers visit your fast, modern platform on their phones, tablets, or laptops.
+                    - **Effortless Interaction:** Clean, simple navigation designed so anyone can browse, purchase, or request services in seconds.
+                    - **Instant 24/7 Smart Assistance:** An automated assistant answers common questions, recommends products, and helps users around the clock.
+                    - **Seamless Checkout & Updates:** Secure payment processing with instant SMS and WhatsApp confirmation receipts.
+                    """)
+
+            with col_nt2:
+                with st.container(border=True):
+                    st.markdown("#### 📦 3. What Your Business Receives (Deliverables)")
+                    st.markdown(f"""
+                    - **Custom Digital Platform:** Tailored specifically for **{p.client_name}** with your branding, logos, and custom workflow.
+                    - **Business Owner Dashboard:** A secure control panel where you and your team can view orders, manage content, and track revenue with zero technical knowledge.
+                    - **Automated Alerts:** Get notified on WhatsApp/Email immediately whenever a new customer, order, or inquiry comes in.
+                    - **Full Cloud & Security Setup:** 99.9% uptime guarantee with complete data backup and SSL security.
+                    - **Staff Training & 30-Day Warranty:** Our team trains your staff and provides a 30-day warranty after launch.
+                    """)
+
+                with st.container(border=True):
+                    st.markdown("#### 📈 4. Concrete Business Benefits")
+                    st.markdown("""
+                    - **Saves 15+ Hours/Week:** Eliminates manual data entry and spreadsheet chaos.
+                    - **Open for Business 24/7:** Capture customers and bookings even while your team sleeps.
+                    - **Professional Brand Authority:** A fast, sleek digital presence that builds customer trust from the first click.
+                    """)
         
         with prop_tab1:
             st.markdown("#### System Topology & Flowchart (Interactive Mermaid.js)")
@@ -382,57 +425,21 @@ with tab_demo:
             st.markdown(p.full_markdown_proposal)
 
         # ==========================================================
-        # INTERACTIVE WORKFLOW: MODIFICATIONS & HUMAN ARCHITECT MEET
+        # DIRECT ACTION: FINALIZE & SCHEDULE FACE-TO-FACE MEETING
         # ==========================================================
         st.write("")
         st.divider()
 
-        col_refine, col_book = st.columns([1, 1], gap="large")
+        st.markdown("### 🤝 Ready to Move Forward? Schedule Your Face-to-Face Discovery Session")
+        st.caption("Meet directly with a Cynbit Senior Solutions Architect to review your project and kick off development.")
 
-        with col_refine:
-            st.markdown("### 🔄 Request Scope Modification")
-            st.caption("Need changes? Adjust requirements, budget, or platforms and recalibrate instantly.")
-            
-            with st.container(border=True):
-                mod_notes = st.text_area(
-                    "Describe your desired changes / additions:",
-                    placeholder="e.g. Please add a Flutter mobile app for iOS/Android, reduce timeline to 6 weeks, or add Razorpay gateway...",
-                    height=110
-                )
-                col_mod_w, col_mod_b = st.columns(2)
-                with col_mod_w:
-                    mod_weeks = st.number_input("Revised Timeline (Weeks):", min_value=2, max_value=20, value=p.total_weeks, step=2)
-                with col_mod_b:
-                    mod_budget = st.number_input("Revised Budget ($ USD, 0 for auto):", min_value=0, max_value=200000, value=0, step=2000)
-
-                if st.button("⚡ Apply Modification & Recalibrate", use_container_width=True):
-                    if mod_notes.strip():
-                        updated_brief = f"{brief_input}\n\n[CLIENT REVISION REQUEST]: {mod_notes.strip()}"
-                    else:
-                        updated_brief = brief_input
-                        
-                    with st.spinner("Recalibrating architecture and regenerating proposal..."):
-                        b_override = mod_budget if mod_budget > 0 else None
-                        revised_p = pipeline.analyze_and_generate(
-                            client_name=client_name,
-                            brief=updated_brief,
-                            industry=industry_input,
-                            budget_override=b_override,
-                            timeline_weeks_override=mod_weeks
-                        )
-                        st.session_state["active_proposal"] = revised_p
-                        st.success("✅ Architecture and budget successfully updated!")
-                        st.rerun()
-
-        with col_book:
-            st.markdown("### 🤝 Finalize & Book Architect Meeting")
-            st.caption("Satisfied with the architecture? Book a face-to-face video discovery session with a Cynbit Architect.")
-            
-            with st.container(border=True):
-                poc_name = st.text_input("Full Name:", value=client_name + " Lead")
-                poc_email = st.text_input("Work Email:", placeholder="lead@company.com")
+        with st.container(border=True):
+            col_b1, col_b2 = st.columns(2)
+            with col_b1:
+                poc_name = st.text_input("Your Full Name:", value=client_name + " Executive")
+                poc_email = st.text_input("Your Work Email:", placeholder="lead@company.com")
+            with col_b2:
                 poc_phone = st.text_input("Phone / WhatsApp:", placeholder="+91 98765 43210")
-                
                 col_date, col_slot = st.columns(2)
                 with col_date:
                     pref_date = st.date_input("Preferred Date:")
@@ -443,22 +450,22 @@ with tab_demo:
                         "04:00 PM - 04:30 PM IST",
                         "06:00 PM - 06:30 PM IST"
                     ])
-                    
-                book_clicked = st.button("🚀 Finalize & Schedule Face-to-Face Meet", type="primary", use_container_width=True)
                 
-                if book_clicked:
-                    if not poc_email or "@" not in poc_email:
-                        st.error("Please enter a valid work email address.")
-                    else:
-                        st.session_state["meeting_confirmed"] = {
-                            "name": poc_name,
-                            "email": poc_email,
-                            "phone": poc_phone,
-                            "date": str(pref_date),
-                            "slot": pref_slot,
-                            "project": p.project_title,
-                            "budget": f"${p.budget_usd:,} USD (₹{p.budget_inr:,} INR)"
-                        }
+            book_clicked = st.button("🚀 Finalize Scope & Schedule Face-to-Face Meeting", type="primary", use_container_width=True)
+            
+            if book_clicked:
+                if not poc_email or "@" not in poc_email:
+                    st.error("Please enter a valid work email address.")
+                else:
+                    st.session_state["meeting_confirmed"] = {
+                        "name": poc_name,
+                        "email": poc_email,
+                        "phone": poc_phone,
+                        "date": str(pref_date),
+                        "slot": pref_slot,
+                        "project": p.project_title,
+                        "budget": f"${p.budget_usd:,} USD (₹{p.budget_inr:,} INR)"
+                    }
 
         # Show Confirmed Meeting Banner if booked
         if "meeting_confirmed" in st.session_state:
