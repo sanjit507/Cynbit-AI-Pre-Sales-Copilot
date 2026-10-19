@@ -1,7 +1,6 @@
 # ⚡ Cynbit AI Pre-Sales & Solution Architecture Copilot
 
-> **Technical Assessment Submission for AI/ML Engineer Intern**  
-> **Applicant:** Sanjit Chaudhary  
+
 > **Target Company:** [Cynbit Technologies Pvt. Ltd.](https://www.cynbit.in), Jaipur, Rajasthan, India  
 > **Evaluation Window:** October 2026  
 
