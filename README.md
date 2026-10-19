@@ -27,23 +27,26 @@ The **Cynbit AI Pre-Sales Copilot** reduces initial discovery and technical scop
 ## 🏗️ System Architecture & Workflow
 
 ```mermaid
-graph TD
-    Inbound[Unstructured Client Inquiry Brief] --> Parser[Requirement & Scope Normalizer]
-    Parser --> RAG[Cynbit Knowledge Grounding Engine]
-    RAG --> Arch[Multi-Tier Architecture Synthesizer]
-    Arch --> Flow[Dynamic Mermaid.js Flowchart]
-    Arch --> Estimator[Parametric Effort & Budget Engine]
-    Estimator --> Proposal[Branded Client Technical Proposal]
-    Proposal --> Export[Downloadable Markdown / PDF]
+flowchart TD
+    Inbound["Unstructured Client Inquiry Brief"] --> Parser["Requirement & Scope Normalizer"]
+    Parser --> RAG["Cynbit Knowledge Grounding Engine"]
+    RAG --> AI["Google Gemini AI Engine (gemini-1.5-flash / gemini-2.0-flash)"]
+    RAG -.->|"Offline Fallback"| Heuristic["Deterministic Blueprint Rule Engine"]
+    AI --> Arch["Multi-Tier Architecture Synthesizer"]
+    Heuristic --> Arch
+    Arch --> Flow["Dynamic Mermaid.js Flowchart Visualizer"]
+    Arch --> Estimator["Parametric Effort & Budget Engine"]
+    Estimator --> Proposal["Branded Client Technical Proposal"]
+    Proposal --> Export["Downloadable Markdown & PDF Export"]
 ```
 
 ### Key Technical Highlights:
-1. **Multi-Agent Reasoning Pipeline:** Separates client intent extraction, architectural layer mapping, and commercial estimation.
-2. **Grounded in Cynbit Capabilities:** Recommends only Cynbit-verified stacks (Next.js 14/15, Python FastAPI, Rust/Go, PostgreSQL, Redis, Qdrant, AWS/Azure).
-3. **Dual-Mode Engine:**
-   - **Live LLM API:** Connect any Groq (`Llama 3.3 70B`) or OpenAI (`GPT-4o`) API key.
-   - **High-Fidelity Heuristic Engine:** 100% offline, deterministic fallback that runs instantly without an API key or billing setup.
-4. **Interactive Architecture Visualizer:** Renders crisp, zoomable Mermaid.js system diagrams directly in the browser.
+1. **Google Gemini AI Engine:** Native integration with Google Gemini (`gemini-1.5-flash` with automatic fallback to `gemini-2.0-flash`) via Google AI Studio API for rapid multi-tier architecture reasoning, structured JSON schema enforcement, and automated proposal authoring.
+2. **Dual-Mode Architecture:**
+   - **Live Gemini API:** Connect your free Google AI Studio API key (`GEMINI_API_KEY`) to run live generative solution architecture modeling.
+   - **High-Fidelity Heuristic Engine:** 100% offline, deterministic fallback that runs instantly without an API key or billing setup, ensuring zero-friction evaluation.
+3. **Grounded in Cynbit Capabilities:** Recommends verified Cynbit stacks (Next.js 14/15, Python FastAPI, Go/Rust, PostgreSQL, Redis, Qdrant/Pinecone vector storage, AWS/Azure).
+4. **Interactive Architecture Visualizer:** Dynamically synthesizes and renders live, zoomable Mermaid.js system topology diagrams directly in the browser.
 
 ---
 
@@ -60,7 +63,21 @@ cd cynbit-ai-pre-sales-copilot
 pip install -r requirements.txt
 ```
 
-### 3. Launch the Application
+### 3. Configure Google Gemini API Key (Optional)
+Copy `.env.example` to `.env` and add your Google Gemini API key:
+```bash
+# Windows PowerShell
+copy .env.example .env
+```
+Inside `.env`:
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+> [!TIP]
+> You can get a free Google Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey).  
+> **Offline Mode:** If you do not configure an API key, the copilot runs seamlessly using Cynbit's built-in deterministic heuristic architecture engine.
+
+### 4. Launch the Application
 ```bash
 python -m streamlit run app.py
 ```
@@ -83,12 +100,13 @@ Open your browser at `http://localhost:8501`.
 cynbit-ai-pre-sales-copilot/
 ├── app.py                         # Streamlit interactive application
 ├── requirements.txt               # Production dependencies
+├── .env.example                   # Template for Google Gemini API Key
 ├── README.md                      # Comprehensive project guide
 ├── .gitignore                     # Standard Python exclusions
 ├── core/
 │   ├── __init__.py
 │   ├── kb.py                      # Cynbit tech catalog & SaaS blueprint patterns
-│   ├── pipeline.py                # Multi-stage reasoning & proposal engine
+│   ├── pipeline.py                # Multi-stage reasoning & proposal engine (Gemini AI + Fallback)
 │   ├── presets.py                 # Realistic client discovery scenarios
 │   └── prompts.py                 # System prompts & few-shot templates
 ├── data/

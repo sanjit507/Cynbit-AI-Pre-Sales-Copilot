@@ -135,6 +135,9 @@ def render_mermaid(code: str, height: int = 480):
     clean_code = re.sub(r"\s*```$", "", clean_code.strip()).strip()
     if not (clean_code.startswith("graph") or clean_code.startswith("flowchart") or clean_code.startswith("sequenceDiagram")):
         clean_code = "graph TD\n    " + clean_code
+    # Sanitize ampersands inside Mermaid labels — & breaks the Mermaid.js parser
+    clean_code = re.sub(r'(?<=\[)([^\]]*?)&([^\]]*?)(?=\])', lambda m: m.group(1) + 'and' + m.group(2), clean_code)
+    clean_code = re.sub(r'(?<=\[")([^"]*?)&([^"]*?)(?="\])', lambda m: m.group(1) + 'and' + m.group(2), clean_code)
 
     svg_rendered = False
     

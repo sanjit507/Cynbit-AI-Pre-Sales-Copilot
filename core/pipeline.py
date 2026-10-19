@@ -157,6 +157,12 @@ Ground your architecture in modern production technologies that Cynbit uses:
 - Data Layer: PostgreSQL 16 (AWS RDS/Supabase), Redis Caching, Qdrant / Pinecone Vector Store.
 - Cloud & Security: AWS (ECS, Lambda, S3, CloudFront), Azure, Docker, Zero-Trust OAuth2.
 
+CRITICAL MERMAID RULES:
+- Always wrap ALL node labels in double quotes: NodeID["Label Text"]
+- Never use the ampersand character (&) inside any Mermaid label. Always spell out "and" instead.
+- For subgraph titles, use: subgraph ID ["Title Text"]
+- For database cylinder nodes, use: DB[("Database Name")]
+
 You MUST respond strictly with valid JSON (no surrounding markdown code blocks, just pure JSON).
 The JSON MUST follow this exact schema:
 {{
@@ -305,6 +311,9 @@ Synthesize a production-ready solution now in valid JSON format.
         mermaid_clean = mermaid_clean.strip()
         if not (mermaid_clean.startswith("graph") or mermaid_clean.startswith("flowchart")):
             mermaid_clean = "graph TD\n    " + mermaid_clean
+        # Sanitize ampersands inside labels - Mermaid.js breaks on unescaped &
+        mermaid_clean = re.sub(r'(?<=\[)([^\]]*?)&([^\]]*?)(?=\])', lambda m: m.group(1) + 'and' + m.group(2), mermaid_clean)
+        mermaid_clean = re.sub(r'(?<=\[")([^"]*?)&([^"]*?)(?="\])', lambda m: m.group(1) + 'and' + m.group(2), mermaid_clean)
         mermaid_code = mermaid_clean
 
         full_proposal = PROPOSAL_TEMPLATE.format(
@@ -367,28 +376,28 @@ Synthesize a production-ready solution now in valid JSON format.
             base_hours = 380
 
             mermaid_code = """graph TD
-    subgraph ClientLayer [Client & Patient Touchpoints]
-        PatientWeb[Patient Portal Next.js / Mobile]
-        PhoneCall[Inbound Phone Calls - PSTN]
-        GMB[Google Business Reviews]
+    subgraph ClientLayer ["Client and Patient Touchpoints"]
+        PatientWeb["Patient Portal - Next.js / Mobile"]
+        PhoneCall["Inbound Phone Calls - PSTN"]
+        GMB["Google Business Reviews"]
     end
 
-    subgraph GatewayLayer [API & Ingestion Gateway]
-        APIGateway[Cloudflare CDN & API Gateway]
-        VoiceGateway[Twilio + Deepgram Audio Stream]
-        ReviewWebhook[Review Ingestion Webhook]
+    subgraph GatewayLayer ["API and Ingestion Gateway"]
+        APIGateway["Cloudflare CDN and API Gateway"]
+        VoiceGateway["Twilio + Deepgram Audio Stream"]
+        ReviewWebhook["Review Ingestion Webhook"]
     end
 
-    subgraph CoreServices [Cynbit Scalable Microservices]
-        BookingAPI[FastAPI Booking & Calendar Engine]
-        ReputationEngine[Revio Sentiment & Crisis Service]
-        VoiceAgent[Autonomous Healthcare Voice Agent]
+    subgraph CoreServices ["Cynbit Scalable Microservices"]
+        BookingAPI["FastAPI Booking and Calendar Engine"]
+        ReputationEngine["Revio Sentiment and Crisis Service"]
+        VoiceAgent["Autonomous Healthcare Voice Agent"]
     end
 
-    subgraph StorageLayer [Persistent & Vector Storage]
-        Postgres[(PostgreSQL RDS - Patient Records)]
-        QdrantDB[(Qdrant Vector Store - Clinical FAQs)]
-        RedisCache[(Redis Cache & Task Queue)]
+    subgraph StorageLayer ["Persistent and Vector Storage"]
+        Postgres[("PostgreSQL RDS - Patient Records")]
+        QdrantDB[("Qdrant Vector Store - Clinical FAQs")]
+        RedisCache[("Redis Cache and Task Queue")]
     end
 
     PatientWeb --> APIGateway
@@ -418,27 +427,27 @@ Synthesize a production-ready solution now in valid JSON format.
             base_hours = 340
 
             mermaid_code = """graph TD
-    subgraph Users [User Portals]
-        Landlord[Property Manager Dashboard]
-        Tenant[Tenant Self-Service Portal]
+    subgraph Users ["User Portals"]
+        Landlord["Property Manager Dashboard"]
+        Tenant["Tenant Self-Service Portal"]
     end
 
-    subgraph Ingestion [Ingestion & Processing]
-        API[FastAPI Gateway]
-        DocAI[Document OCR & Lease Extraction Engine]
-        MsgQueue[Celery + Redis Worker Queue]
+    subgraph Ingestion ["Ingestion and Processing"]
+        API["FastAPI Gateway"]
+        DocAI["Document OCR and Lease Extraction Engine"]
+        MsgQueue["Celery + Redis Worker Queue"]
     end
 
-    subgraph BusinessLogic [Core Application Logic]
-        RentEngine[Automated Rent & Billing Engine]
-        LeaseEngine[Lease & KYC Verification Service]
-        WhatsAppBot[Automated WhatsApp Rent Chaser]
+    subgraph BusinessLogic ["Core Application Logic"]
+        RentEngine["Automated Rent and Billing Engine"]
+        LeaseEngine["Lease and KYC Verification Service"]
+        WhatsAppBot["Automated WhatsApp Rent Chaser"]
     end
 
-    subgraph Data [Storage Layer]
-        DB[(PostgreSQL Primary DB)]
-        S3Vault[(AWS S3 Encrypted Lease Docs)]
-        Cache[(Redis Payment Cache)]
+    subgraph Data ["Storage Layer"]
+        DB[("PostgreSQL Primary DB")]
+        S3Vault[("AWS S3 Encrypted Lease Docs")]
+        Cache[("Redis Payment Cache")]
     end
 
     Landlord --> API
@@ -465,28 +474,28 @@ Synthesize a production-ready solution now in valid JSON format.
             base_hours = 270
 
             mermaid_code = """graph TD
-    subgraph CustomerTouchpoints [Customer Experience]
-        Browser[Modern Next.js 15 Storefront]
-        MobilePWA[Mobile Progressive Web App]
-        AIChat[AI Product Recommendation Chat]
+    subgraph CustomerTouchpoints ["Customer Experience"]
+        Browser["Modern Next.js 15 Storefront"]
+        MobilePWA["Mobile Progressive Web App"]
+        AIChat["AI Product Recommendation Chat"]
     end
 
-    subgraph GatewayLayer [Edge & Security Layer]
-        CloudFront[AWS CloudFront Edge CDN]
-        RateLimiter[FastAPI API Gateway & JWT Auth]
+    subgraph GatewayLayer ["Edge and Security Layer"]
+        CloudFront["AWS CloudFront Edge CDN"]
+        RateLimiter["FastAPI API Gateway and JWT Auth"]
     end
 
-    subgraph ServiceMesh [Decoupled Backend Services]
-        WPCMS[Headless WordPress & WooCommerce Core]
-        InventoryAPI[FastAPI Inventory & Order Microservice]
-        AIAgent[Conversational Shopping & Stylist Bot]
-        PaymentGateway[Razorpay / Stripe Webhook Listener]
+    subgraph ServiceMesh ["Decoupled Backend Services"]
+        WPCMS["Headless WordPress and WooCommerce Core"]
+        InventoryAPI["FastAPI Inventory and Order Microservice"]
+        AIAgent["Conversational Shopping and Stylist Bot"]
+        PaymentGateway["Razorpay / Stripe Webhook Listener"]
     end
 
-    subgraph DataTier [Scalable Storage & Cache]
-        Postgres[(PostgreSQL Orders & Customer DB)]
-        RedisCache[(Redis Distributed Cart Cache)]
-        VectorDB[(Qdrant Product Embeddings Store)]
+    subgraph DataTier ["Scalable Storage and Cache"]
+        Postgres[("PostgreSQL Orders and Customer DB")]
+        RedisCache[("Redis Distributed Cart Cache")]
+        VectorDB[("Qdrant Product Embeddings Store")]
     end
 
     Browser --> CloudFront
@@ -515,27 +524,27 @@ Synthesize a production-ready solution now in valid JSON format.
             base_hours = 460
 
             mermaid_code = """graph TD
-    subgraph InboundDocs [Inbound Multichannel Ingestion]
-        CarrierEmail[Carrier Emails & PDF Attachments]
-        VendorPortal[Vendor Web Upload Next.js]
-        FTPStream[Legacy SFTP Stream]
+    subgraph InboundDocs ["Inbound Multichannel Ingestion"]
+        CarrierEmail["Carrier Emails and PDF Attachments"]
+        VendorPortal["Vendor Web Upload - Next.js"]
+        FTPStream["Legacy SFTP Stream"]
     end
 
-    subgraph Pipeline [Cognitive Extraction Pipeline]
-        IngestService[Go Ingestion Worker]
-        DocProcessor[Multi-Modal LayoutLM + LLM OCR]
-        AnomalyDetector[Anomaly & Duplicate Detection Agent]
+    subgraph Pipeline ["Cognitive Extraction Pipeline"]
+        IngestService["Go Ingestion Worker"]
+        DocProcessor["Multi-Modal LayoutLM + LLM OCR"]
+        AnomalyDetector["Anomaly and Duplicate Detection Agent"]
     end
 
-    subgraph Matching [3-Way Matching & ERP Integration]
-        SAPBridge[SAP ERP Connector - RFC/REST]
-        ExceptionUI[Human-in-the-Loop Review Dashboard]
+    subgraph Matching ["3-Way Matching and ERP Integration"]
+        SAPBridge["SAP ERP Connector - RFC/REST"]
+        ExceptionUI["Human-in-the-Loop Review Dashboard"]
     end
 
-    subgraph Storage [Enterprise Storage & Audit]
-        DocStore[(AWS S3 Versioned Document Store)]
-        Postgres[(PostgreSQL Audit & Extraction Ledger)]
-        VectorDB[(Qdrant Vector Index)]
+    subgraph Storage ["Enterprise Storage and Audit"]
+        DocStore[("AWS S3 Versioned Document Store")]
+        Postgres[("PostgreSQL Audit and Extraction Ledger")]
+        VectorDB[("Qdrant Vector Index")]
     end
 
     CarrierEmail --> IngestService
@@ -562,26 +571,26 @@ Synthesize a production-ready solution now in valid JSON format.
             base_hours = 360
 
             mermaid_code = """graph TD
-    subgraph StudentUI [Student Learning Environment]
-        CodeIDE[Monaco Code Editor & Terminal UI]
-        InterviewBot[AI Mock Interview Companion]
-        RadarView[Skill Radar & Progress Dashboard]
+    subgraph StudentUI ["Student Learning Environment"]
+        CodeIDE["Monaco Code Editor and Terminal UI"]
+        InterviewBot["AI Mock Interview Companion"]
+        RadarView["Skill Radar and Progress Dashboard"]
     end
 
-    subgraph SecurityGate [Security & Execution Gateway]
-        Gateway[FastAPI Security & Auth Gateway]
-        SandboxDaemon[Isolated Docker Execution Sandbox]
+    subgraph SecurityGate ["Security and Execution Gateway"]
+        Gateway["FastAPI Security and Auth Gateway"]
+        SandboxDaemon["Isolated Docker Execution Sandbox"]
     end
 
-    subgraph EvaluationCore [Intelligent Evaluation Engine]
-        OutputVerifier[Unit Test & Edge Case Verifier]
-        LLMReviewer[Semantic Code Quality & Complexity Reviewer]
-        SkillEngine[Adaptive XP & Skill Graph Calculator]
+    subgraph EvaluationCore ["Intelligent Evaluation Engine"]
+        OutputVerifier["Unit Test and Edge Case Verifier"]
+        LLMReviewer["Semantic Code Quality and Complexity Reviewer"]
+        SkillEngine["Adaptive XP and Skill Graph Calculator"]
     end
 
-    subgraph Persistence [State & Analytics]
-        UserDB[(PostgreSQL Student Profiles)]
-        LeaderboardCache[(Redis Cache & Live Leaderboard)]
+    subgraph Persistence ["State and Analytics"]
+        UserDB[("PostgreSQL Student Profiles")]
+        LeaderboardCache[("Redis Cache and Live Leaderboard")]
     end
 
     CodeIDE --> Gateway
@@ -606,21 +615,21 @@ Synthesize a production-ready solution now in valid JSON format.
             base_hours = 360
 
             mermaid_code = """graph TD
-    subgraph ClientTier [Frontend Presentation]
-        WebUI[Next.js 14 Modern Web Dashboard]
-        MobileWeb[Responsive Mobile App]
+    subgraph ClientTier ["Frontend Presentation"]
+        WebUI["Next.js 14 Modern Web Dashboard"]
+        MobileWeb["Responsive Mobile App"]
     end
 
-    subgraph ServiceTier [Cynbit Backend Services]
-        Gateway[API Gateway & Rate Limiter]
-        CoreEngine[FastAPI Business Logic]
-        AgentCluster[Autonomous AI Agent Cluster]
+    subgraph ServiceTier ["Cynbit Backend Services"]
+        Gateway["API Gateway and Rate Limiter"]
+        CoreEngine["FastAPI Business Logic"]
+        AgentCluster["Autonomous AI Agent Cluster"]
     end
 
-    subgraph DataTier [Storage & Caching]
-        Postgres[(PostgreSQL Primary Store)]
-        VectorStore[(Qdrant Vector DB)]
-        Redis[(Redis Cache)]
+    subgraph DataTier ["Storage and Caching"]
+        Postgres[("PostgreSQL Primary Store")]
+        VectorStore[("Qdrant Vector DB")]
+        Redis[("Redis Cache")]
     end
 
     WebUI --> Gateway

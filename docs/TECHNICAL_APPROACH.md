@@ -143,15 +143,15 @@ $$\text{Effort (Hours)} = \text{Base Hours} + \sum (\text{Feature Weight} \times
 The copilot synthesizes dynamic architecture flowcharts that render directly in the Streamlit UI:
 
 ```mermaid
-graph TD
-    Client[Client App / Web Browser] -->|HTTPS / Next.js| FE[Cynbit Frontend Layer]
-    FE -->|REST / JWT| Gateway[API Gateway & Rate Limiter]
-    Gateway -->|Async Tasks| Worker[Celery / Redis Task Queue]
-    Gateway -->|Sync Calls| CoreAPI[FastAPI Backend Microservice]
-    CoreAPI -->|Vector Embeddings| VectorDB[(Qdrant / Pinecone Vector Store)]
-    CoreAPI -->|Relational State| RelDB[(PostgreSQL Primary)]
-    CoreAPI -->|LLM Queries| AgentEngine[Cynbit Autonomous AI Agent Core]
-    AgentEngine -->|Inference| CloudLLM[Foundation LLM Cluster]
+flowchart TD
+    Client["Client App / Web Browser"] -->|HTTPS / Next.js| FE["Cynbit Frontend Layer"]
+    FE -->|REST / JWT| Gateway["API Gateway & Rate Limiter"]
+    Gateway -->|Async Tasks| Worker["Celery / Redis Task Queue"]
+    Gateway -->|Sync Calls| CoreAPI["FastAPI Backend Microservice"]
+    CoreAPI -->|Vector Embeddings| VectorDB[("Qdrant / Pinecone Vector Store")]
+    CoreAPI -->|Relational State| RelDB[("PostgreSQL Primary")]
+    CoreAPI -->|LLM Queries| AgentEngine["Cynbit Autonomous AI Agent Core"]
+    AgentEngine -->|Inference| CloudLLM["Google Gemini / Foundation LLM Cluster"]
 ```
 
 ---
